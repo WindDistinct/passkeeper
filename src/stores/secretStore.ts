@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SecretItem } from '../types/secret'
+import { fetchSecrets, createSecret } from '../services/secretService'
 
 export const useSecretStore = defineStore('secrets', () => {
     const currentFilter = ref('all')
@@ -42,18 +43,23 @@ export const useSecretStore = defineStore('secrets', () => {
         currentFilter.value = value
     }
 
-    function addSecret(payload: {
+    async function loadSecrets() {
+        secrets.value = await fetchSecrets() as any
+    }
+
+    async function addSecret(payload: {
         title: string
         username?: string
         type: 'password' | 'api_key' | 'note' | 'ssh_key'
     }) {
-        secrets.value.unshift({
+        await createSecret({
             id: crypto.randomUUID(),
             title: payload.title,
             username: payload.username,
-            type: payload.type,
-            favorite: false
+            secret_type: payload.type
         })
+
+        await loadSecrets()
     }
 
     return {
@@ -61,6 +67,7 @@ export const useSecretStore = defineStore('secrets', () => {
         filteredSecrets,
         currentFilter,
         setFilter,
-        addSecret
+        addSecret,
+        loadSecrets
     }
 })
