@@ -15,9 +15,18 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { onMounted } from 'vue'
+  import { useSecretStore } from './stores/secretStore'
   import MainLayout from './layouts/MainLayout.vue'
   import SecretList from './components/SecretList.vue'
   import CreateSecretModal from './components/CreateSecretModal.vue'
 
   const open = ref(false)
+
+  const secretStore = useSecretStore()
+
+  onMounted(async () => {
+    await secretStore.loadSecrets()
+  })
+
 </script>
