@@ -1,14 +1,23 @@
 <template>
-  <MainLayout>
+  <MainLayout @new-secret="open = true">
     <div class="border border-dashed border-zinc-800 rounded-2xl h-full min-h-125 p-6">
       <h2 class="text-2xl font-semibold mb-4">Your Secrets</h2>
       <!-- <p class="text-zinc-400">Your secrets will appear here.</p> -->
       <SecretList />
     </div>
   </MainLayout>
+
+  <CreateSecretModal
+    :open="open"
+    @close="open = false"
+  />
 </template>
 
 <script setup lang="ts">
-import MainLayout from './layouts/MainLayout.vue'
-import SecretList from './components/SecretList.vue'
+  import { ref } from 'vue'
+  import MainLayout from './layouts/MainLayout.vue'
+  import SecretList from './components/SecretList.vue'
+  import CreateSecretModal from './components/CreateSecretModal.vue'
+
+  const open = ref(false)
 </script>
