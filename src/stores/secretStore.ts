@@ -42,10 +42,25 @@ export const useSecretStore = defineStore('secrets', () => {
         currentFilter.value = value
     }
 
+    function addSecret(payload: {
+        title: string
+        username?: string
+        type: 'password' | 'api_key' | 'note' | 'ssh_key'
+    }) {
+        secrets.value.unshift({
+            id: crypto.randomUUID(),
+            title: payload.title,
+            username: payload.username,
+            type: payload.type,
+            favorite: false
+        })
+    }
+
     return {
         secrets,
         filteredSecrets,
         currentFilter,
-        setFilter
+        setFilter,
+        addSecret
     }
 })
