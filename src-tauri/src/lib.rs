@@ -5,13 +5,14 @@ use rusqlite::params;
 use serde::{Serialize, Deserialize};
 use crypto::{derive_key, decrypt, encrypt};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Secret {
     id: String,
     title: String,
     username: Option<String>,
     secret_type: String,
     favorite: i32,
+    encrypted_payload:  Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -30,7 +31,7 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
     let mut stmt = conn
-        .prepare("SELECT id, title, username, secret_type, favorite FROM secrets")
+        .prepare("SELECT id, title, username, secret_type, favorite, encrypted_payload FROM secrets")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -41,6 +42,7 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
                 username: row.get(2)?,
                 secret_type: row.get(3)?,
                 favorite: row.get(4)?,
+                encrypted_payload: row.get(5)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -50,6 +52,8 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
     for item in rows {
         result.push(item.map_err(|e| e.to_string())?);
     }
+
+    println!("Secrets from DB: {:?}", result);
 
     Ok(result)
 }
