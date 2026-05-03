@@ -16,5 +16,14 @@ pub fn connect() -> Result<Connection> {
         [],
     )?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS vault (
+            id INTEGER PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            salt BLOB NOT NULL
+        )",
+        [],
+    )?;    
+
     Ok(conn)
 }
