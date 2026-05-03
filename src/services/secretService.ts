@@ -16,3 +16,14 @@ export async function decryptSecret(payload: string): Promise<string> {
     })
 }
 
+export async function setupVault(password: string) {
+    return await invoke('setup_vault', { password })
+}
+
+export async function unlockVault(password: string): Promise<boolean> {
+    return await invoke<boolean>('unlock_vault', { password })
+}
+
+export async function vaultExists(): Promise<boolean> {
+    return await invoke<boolean>('vault_exists')
+}
