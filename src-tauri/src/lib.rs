@@ -1,4 +1,5 @@
 mod db;
+mod crypto;
 
 use rusqlite::params;
 use serde::{Serialize, Deserialize};
@@ -12,13 +13,16 @@ struct Secret {
     favorite: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct NewSecret {
     id: String,
     title: String,
     username: Option<String>,
     secret_type: String,
+    password: Option<String>,
 }
+
+
 
 #[tauri::command]
 fn get_secrets() -> Result<Vec<Secret>, String> {
@@ -53,14 +57,30 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
 fn create_secret(payload: NewSecret) -> Result<(), String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
+    use crypto::{derive_key, encrypt};
+
+    let master_password = "dev_master_key";
+    let salt = b"fixed_salt";
+
+    let key = derive_key(master_password, salt);
+
+    let secret_payload = serde_json::json!({
+        "password": payload.password
+    });
+    
+    let payload_json = serde_json::to_string(&secret_payload).unwrap();
+    
+    let encrypted_payload = encrypt(&key, &payload_json);
+
     conn.execute(
-        "INSERT INTO secrets (id, title, username, secret_type, created_at)
-         VALUES (?1, ?2, ?3, ?4, datetime('now'))",
+        "INSERT INTO secrets (id, title, username, secret_type, encrypted_payload, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))",
         params![
             payload.id,
             payload.title,
             payload.username,
-            payload.secret_type
+            payload.secret_type,
+            encrypted_payload
         ],
     )
     .map_err(|e| e.to_string())?;
