@@ -23,15 +23,22 @@
 <script setup lang="ts">
     import { ref } from 'vue'
     import { useVaultStore } from '../stores/vaultStore'
-
+    import { unlockVault } from '../services/secretService'
+    
     const password = ref('')
     const vault = useVaultStore()
 
-    function submit() {
-        if (!password.value) return
+    async function submit() {
+      if (!password.value) return
 
-        // temporal: aceptar cualquier password
+      const ok = await unlockVault(password.value)
+
+      if (ok) {
         vault.unlock()
+      } else {
+        alert('Invalid password')
+      }
     }
+
 </script>
   
