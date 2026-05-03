@@ -12,19 +12,22 @@ export const useSecretStore = defineStore('secrets', () => {
             title: 'GitHub Personal',
             username: 'nickdev',
             type: 'password',
-            favorite: true
+            favorite: true,
+            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
         },
         {
             id: '2',
             title: 'OpenAI API',
             type: 'api_key',
-            favorite: false
+            favorite: false,
+            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
         },
         {
             id: '3',
             title: 'Production Server',
             type: 'ssh_key',
-            favorite: false
+            favorite: false,
+            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
         }
     ])
 

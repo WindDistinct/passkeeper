@@ -9,3 +9,10 @@ export async function createSecret(data: any) {
         payload: data
     })
 }
+
+export async function decryptSecret(payload: string): Promise<string> {
+    return await invoke<string>('get_secret_value', {
+        encryptedPayload: payload
+    })
+}
+
