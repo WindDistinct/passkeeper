@@ -28,6 +28,12 @@
                     <option value="note">Note</option>
                     <option value="ssh_key">SSH Key</option>
                 </select>
+
+                <input
+                    v-model="password"
+                    placeholder="Password"
+                    class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2"
+                    />
             </div>
 
             <div class="flex justify-end gap-3 mt-6">
@@ -57,6 +63,8 @@
         open: boolean
     }>()
 
+    const password = ref('')
+
     const emit = defineEmits(['close'])
 
     const store = useSecretStore()
@@ -71,12 +79,14 @@
         store.addSecret({
             title: title.value,
             username: username.value,
-            type: type.value
+            type: type.value,
+            password: password.value
         })
 
         title.value = ''
         username.value = ''
         type.value = 'password'
+        password.value = ''
 
         emit('close')
     }
