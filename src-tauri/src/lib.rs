@@ -3,6 +3,7 @@ mod crypto;
 
 use rusqlite::params;
 use serde::{Serialize, Deserialize};
+use crypto::{derive_key, decrypt, encrypt};
 
 #[derive(Serialize)]
 struct Secret {
@@ -57,8 +58,6 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
 fn create_secret(payload: NewSecret) -> Result<(), String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
-    use crypto::{derive_key, encrypt};
-
     let master_password = "dev_master_key";
     let salt = b"fixed_salt";
 
@@ -88,11 +87,24 @@ fn create_secret(payload: NewSecret) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn get_secret_value(encrypted_payload: String) -> Result<String, String> {
+    let master_password = "dev_master_key";
+    let salt = b"fixed_salt";
+
+    let key = derive_key(master_password, salt);
+
+    let decrypted = decrypt(&key, &encrypted_payload);
+
+    Ok(decrypted)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_secrets,
-            create_secret
+            create_secret,
+            get_secret_value
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
