@@ -11,4 +11,5 @@ export interface SecretItem {
     type: SecretType
     folder?: string
     favorite: boolean
+    encrypted_payload: string
 }
