@@ -1,11 +1,15 @@
 mod db;
 mod crypto;
 
-use rusqlite::params;
 use serde::{Serialize, Deserialize};
 use crypto::{derive_key, decrypt, encrypt};
 use rand::RngCore;
 use base64::{engine::general_purpose, Engine as _};
+use std::sync::Mutex;
+
+struct AppState {
+    key: Mutex<Option<Vec<u8>>>,
+}
 
 #[derive(Serialize, Debug)]
 struct Secret {
@@ -61,26 +65,27 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
 }
 
 #[tauri::command]
-fn create_secret(payload: NewSecret) -> Result<(), String> {
+fn create_secret(
+    payload: NewSecret,
+    state: tauri::State<AppState>
+) -> Result<(), String> {
+    let key_guard = state.key.lock().unwrap();
+    let key = key_guard.as_ref().ok_or("Vault locked")?;
+
     let conn = db::connect().map_err(|e| e.to_string())?;
-
-    let master_password = "dev_master_key";
-    let salt = b"fixed_salt";
-
-    let key = derive_key(master_password, salt);
 
     let secret_payload = serde_json::json!({
         "password": payload.password
     });
-    
+
     let payload_json = serde_json::to_string(&secret_payload).unwrap();
-    
-    let encrypted_payload = encrypt(&key, &payload_json);
+
+    let encrypted_payload = encrypt(key, &payload_json);
 
     conn.execute(
         "INSERT INTO secrets (id, title, username, secret_type, encrypted_payload, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))",
-        params![
+        rusqlite::params![
             payload.id,
             payload.title,
             payload.username,
@@ -93,17 +98,20 @@ fn create_secret(payload: NewSecret) -> Result<(), String> {
     Ok(())
 }
 
+
 #[tauri::command]
-fn get_secret_value(encrypted_payload: String) -> Result<String, String> {
-    let master_password = "dev_master_key";
-    let salt = b"fixed_salt";
+fn get_secret_value(
+    encrypted_payload: String,
+    state: tauri::State<AppState>
+) -> Result<String, String> {
+    let key_guard = state.key.lock().unwrap();
+    let key = key_guard.as_ref().ok_or("Vault locked")?;
 
-    let key = derive_key(master_password, salt);
-
-    let decrypted = decrypt(&key, &encrypted_payload);
+    let decrypted = decrypt(key, &encrypted_payload);
 
     Ok(decrypted)
 }
+
 
 #[tauri::command]
 fn setup_vault(password: String) -> Result<(), String> {
@@ -126,29 +134,32 @@ fn setup_vault(password: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn unlock_vault(password: String) -> Result<bool, String> {
+fn unlock_vault(
+    password: String,
+    state: tauri::State<AppState>
+) -> Result<bool, String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
-    let mut stmt = conn
-        .prepare("SELECT password_hash, salt FROM vault LIMIT 1")
+    let (stored_hash, salt): (String, Vec<u8>) = conn
+        .query_row(
+            "SELECT password_hash, salt FROM vault LIMIT 1",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
         .map_err(|e| e.to_string())?;
-
-    let row = stmt
-        .query_row([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, Vec<u8>>(1)?,
-            ))
-        })
-        .map_err(|e| e.to_string())?;
-
-    let (stored_hash, salt) = row;
 
     let key = derive_key(&password, &salt);
-    let computed_hash = general_purpose::STANDARD.encode(&key);
+    let computed_hash = base64::engine::general_purpose::STANDARD.encode(&key);
 
-    Ok(stored_hash == computed_hash)
+    if computed_hash == stored_hash {
+        let mut guard = state.key.lock().unwrap();
+        *guard = Some(key);
+        return Ok(true);
+    }
+
+    Ok(false)
 }
+
 
 #[tauri::command]
 fn vault_exists() -> Result<bool, String> {
@@ -165,16 +176,28 @@ fn vault_exists() -> Result<bool, String> {
     Ok(count > 0)
 }
 
+#[tauri::command]
+fn lock_vault(state: tauri::State<AppState>) -> Result<(), String> {
+    let mut guard = state.key.lock().unwrap();
+    *guard = None;
+    Ok(())
+}
+
+
 
 pub fn run() {
     tauri::Builder::default()
+        .manage(AppState {
+            key: Mutex::new(None),
+        })
         .invoke_handler(tauri::generate_handler![
             get_secrets,
             create_secret,
             get_secret_value,
             setup_vault,
             unlock_vault,
-            vault_exists
+            vault_exists,
+            lock_vault
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

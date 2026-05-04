@@ -27,3 +27,7 @@ export async function unlockVault(password: string): Promise<boolean> {
 export async function vaultExists(): Promise<boolean> {
     return await invoke<boolean>('vault_exists')
 }
+
+export async function lockVault() {
+    return await invoke('lock_vault')
+}

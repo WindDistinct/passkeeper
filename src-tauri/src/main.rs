@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    passkeeper_lib::run()
+    passkeeper_lib::run();
 }
