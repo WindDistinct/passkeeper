@@ -19,6 +19,8 @@
 
     <CreateSecretModal :open="open" @close="open = false" />
   </template>
+  
+  <ToastContainer />
 </template>
 
 <script setup lang="ts">
@@ -33,6 +35,7 @@ import UnlockPage from './pages/UnlockPage.vue'
 import MainLayout from './layouts/MainLayout.vue'
 import SecretList from './components/SecretList.vue'
 import CreateSecretModal from './components/CreateSecretModal.vue'
+import ToastContainer from './components/ToastContainer.vue'
 
 const vault = useVaultStore()
 const store = useSecretStore()
