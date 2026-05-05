@@ -12,7 +12,7 @@
     </p>
 
     <button @click="reveal" class="text-xs text-zinc-400 mt-2">
-      Show secret
+      {{ value ? 'Revealed (auto-hide)' : 'Show secret' }}
     </button>
 
     <p v-if="value" class="text-green-400 text-sm mt-2">
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { decryptSecret } from '../services/secretService'
 import type { SecretItem } from '../types/secret'
 
@@ -47,10 +47,22 @@ const value = ref('')
 const { copy, copied } = useClipboard()
 const toast = useToastStore()
 
+let revealTimer: ReturnType<typeof setTimeout> | null = null
+
 async function reveal() {
   if (!props.item.encrypted_payload) return
 
-  value.value = await decryptSecret(props.item.encrypted_payload)
+  if (value.value) {
+    if (revealTimer) {
+      clearTimeout(revealTimer)
+    }
+  } else {
+    value.value = await decryptSecret(props.item.encrypted_payload)
+  }
+
+  revealTimer = setTimeout(() => {
+    clearSecret()
+  }, 8000)
 }
 
 async function handleCopy() {
@@ -59,5 +71,18 @@ async function handleCopy() {
   await copy(value.value)
   toast.show('Copied to clipboard (auto-clear in 10s)')
 }
+
+function clearSecret() {
+  value.value = ''
+
+  if (revealTimer) {
+    clearTimeout(revealTimer)
+    revealTimer = null
+  }
+}
+
+onUnmounted(() => {
+  clearSecret()
+})
 
 </script>
