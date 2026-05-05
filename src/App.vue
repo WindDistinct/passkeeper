@@ -19,14 +19,16 @@
 
     <CreateSecretModal :open="open" @close="open = false" />
   </template>
-  
+
   <ToastContainer />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useVaultStore } from './stores/vaultStore'
 import { useSecretStore } from './stores/secretStore'
+import { useInactivity } from './composables/useInactivity'
+import { useToastStore } from './stores/toastStore'
 
 import { vaultExists } from './services/secretService'
 
@@ -52,4 +54,26 @@ onMounted(async () => {
     await store.loadSecrets()
   }
 })
+
+const toast = useToastStore()
+
+const { start, stop } = useInactivity({
+  timeout: 5 * 60 * 1000,
+  onTimeout: () => {
+    vault.lock()
+    toast.show('Vault locked due to inactivity')
+  }
+})
+
+watch(
+  () => vault.unlocked,
+  (isUnlocked) => {
+    if (isUnlocked) {
+      start()
+    } else {
+      stop()
+    }
+  },
+  { immediate: true }
+)
 </script>
