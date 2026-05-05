@@ -19,6 +19,14 @@
       {{ value }}
     </p>
 
+    <button
+      v-if="value"
+      @click="handleCopy"
+      class="text-xs text-blue-400 mt-2"
+    >
+      {{ copied ? 'Copied' : 'Copy' }}
+    </button>
+
   </div>
 </template>
 
@@ -27,15 +35,29 @@ import { ref } from 'vue'
 import { decryptSecret } from '../services/secretService'
 import type { SecretItem } from '../types/secret'
 
+import { useClipboard } from '../composables/useClipboard'
+import { useToastStore } from '../stores/toastStore'
+
 const props = defineProps<{
   item: SecretItem
 }>()
 
 const value = ref('')
 
+const { copy, copied } = useClipboard()
+const toast = useToastStore()
+
 async function reveal() {
   if (!props.item.encrypted_payload) return
 
   value.value = await decryptSecret(props.item.encrypted_payload)
 }
+
+async function handleCopy() {
+  if (!value.value) return
+
+  await copy(value.value)
+  toast.show('Copied to clipboard (auto-clear in 10s)')
+}
+
 </script>
