@@ -31,12 +31,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
 import { decryptSecret } from '../services/secretService'
 import type { SecretItem } from '../types/secret'
 
 import { useClipboard } from '../composables/useClipboard'
 import { useToastStore } from '../stores/toastStore'
+import { useAppVisibility } from '../composables/useAppVisibility'
 
 const props = defineProps<{
   item: SecretItem
@@ -46,8 +47,15 @@ const value = ref('')
 
 const { copy, copied } = useClipboard()
 const toast = useToastStore()
+const { isVisible } = useAppVisibility()
 
 let revealTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(isVisible, (visible) => {
+  if (!visible) {
+    clearSecret()
+  }
+})
 
 async function reveal() {
   if (!props.item.encrypted_payload) return
