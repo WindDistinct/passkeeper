@@ -41,7 +41,6 @@ import { ref, onUnmounted, watch } from 'vue'
 import { decryptSecret, copySecretToClipboard } from '../services/secretService'
 import type { SecretItem } from '../types/secret'
 
-import { useClipboard } from '../composables/useClipboard'
 import { useToastStore } from '../stores/toastStore'
 import { useAppVisibility } from '../composables/useAppVisibility'
 
@@ -51,7 +50,6 @@ const props = defineProps<{
 
 const value = ref('')
 
-const { copy } = useClipboard()
 const toast = useToastStore()
 const { isVisible } = useAppVisibility()
 
