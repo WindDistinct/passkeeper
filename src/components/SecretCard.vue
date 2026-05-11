@@ -66,7 +66,6 @@ async function startReveal() {
   if (!props.item.encrypted_payload) return
 
   isHolding = true
-  console.log(isHolding)
 
   // evitar múltiples decrypts
   if (!value.value) {
