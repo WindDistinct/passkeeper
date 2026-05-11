@@ -39,13 +39,13 @@
 <script setup lang="ts">
 import { ref, onUnmounted, watch } from 'vue'
 import { decryptSecret, copySecretToClipboard } from '../services/secretService'
-import type { SecretItem } from '../types/secret'
+import type { SecretPreview } from '../types/secret'
 
 import { useToastStore } from '../stores/toastStore'
 import { useAppVisibility } from '../composables/useAppVisibility'
 
 const props = defineProps<{
-  item: SecretItem
+  item: SecretPreview
 }>()
 
 const value = ref('')

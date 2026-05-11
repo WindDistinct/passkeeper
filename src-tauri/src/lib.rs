@@ -13,13 +13,12 @@ struct AppState {
 }
 
 #[derive(Serialize, Debug)]
-struct Secret {
+struct SecretPreview {
     id: String,
     title: String,
     username: Option<String>,
     secret_type: String,
     favorite: i32,
-    encrypted_payload:  Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,22 +33,21 @@ struct NewSecret {
 
 
 #[tauri::command]
-fn get_secrets() -> Result<Vec<Secret>, String> {
+fn get_secrets() -> Result<Vec<SecretPreview>, String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
     let mut stmt = conn
-        .prepare("SELECT id, title, username, secret_type, favorite, encrypted_payload FROM secrets")
+        .prepare("SELECT id, title, username, secret_type, favorite FROM secrets")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
         .query_map([], |row| {
-            Ok(Secret {
+            Ok(SecretPreview {
                 id: row.get(0)?,
                 title: row.get(1)?,
                 username: row.get(2)?,
                 secret_type: row.get(3)?,
                 favorite: row.get(4)?,
-                encrypted_payload: row.get(5)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -59,9 +57,7 @@ fn get_secrets() -> Result<Vec<Secret>, String> {
     for item in rows {
         result.push(item.map_err(|e| e.to_string())?);
     }
-
-    println!("Secrets from DB: {:?}", result);
-
+    
     Ok(result)
 }
 

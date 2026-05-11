@@ -1,35 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { SecretItem } from '../types/secret'
+import type { SecretPreview } from '../types/secret'
 import { fetchSecrets, createSecret } from '../services/secretService'
 
 export const useSecretStore = defineStore('secrets', () => {
     const currentFilter = ref('all')
 
-    const secrets = ref<SecretItem[]>([
-        {
-            id: '1',
-            title: 'GitHub Personal',
-            username: 'nickdev',
-            type: 'password',
-            favorite: true,
-            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
-        },
-        {
-            id: '2',
-            title: 'OpenAI API',
-            type: 'api_key',
-            favorite: false,
-            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
-        },
-        {
-            id: '3',
-            title: 'Production Server',
-            type: 'ssh_key',
-            favorite: false,
-            encrypted_payload: 'U2FsdGVkX1+IhVhZyqL7Qe5g5jv1n9s8f6g7h8j9k0='
-        }
-    ])
+    const secrets = ref<SecretPreview[]>([])
 
     const filteredSecrets = computed(() => {
         if (currentFilter.value === 'all') return secrets.value

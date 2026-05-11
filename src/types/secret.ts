@@ -4,12 +4,10 @@ export type SecretType =
     | 'note'
     | 'ssh_key'
 
-export interface SecretItem {
+export interface SecretPreview {
     id: string
     title: string
     username?: string
     type: SecretType
-    folder?: string
     favorite: boolean
-    encrypted_payload: string
 }
