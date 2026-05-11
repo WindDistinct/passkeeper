@@ -1,12 +1,13 @@
 mod db;
 mod crypto;
 
+use tauri_plugin_clipboard_manager::ClipboardExt;
 use serde::{Serialize, Deserialize};
 use crypto::{derive_key, decrypt, encrypt};
 use rand::RngCore;
 use base64::{engine::general_purpose, Engine as _};
 use std::sync::Mutex;
-
+use zeroize::Zeroize;
 struct AppState {
     key: Mutex<Option<Vec<u8>>>,
 }
@@ -148,15 +149,17 @@ fn unlock_vault(
         )
         .map_err(|e| e.to_string())?;
 
-    let key = derive_key(&password, &salt);
+    let mut key = derive_key(&password, &salt);
     let computed_hash = base64::engine::general_purpose::STANDARD.encode(&key);
-
+    
     if computed_hash == stored_hash {
         let mut guard = state.key.lock().unwrap();
         *guard = Some(key);
         return Ok(true);
     }
-
+    
+    key.zeroize();
+    
     Ok(false)
 }
 
@@ -179,14 +182,46 @@ fn vault_exists() -> Result<bool, String> {
 #[tauri::command]
 fn lock_vault(state: tauri::State<AppState>) -> Result<(), String> {
     let mut guard = state.key.lock().unwrap();
-    *guard = None;
+    if let Some(mut key) = guard.take() {
+        key.zeroize();
+    }
     Ok(())
 }
 
+#[tauri::command]
+fn copy_secret_to_clipboard(
+    app: tauri::AppHandle,
+    encrypted_payload: String,
+    state: tauri::State<AppState>,
+) -> Result<(), String> {
+    let key_guard = state.key.lock().unwrap();
+    let key = key_guard.as_ref().ok_or("Vault locked")?;
 
+    let decrypted = decrypt(key, &encrypted_payload);
+
+    app.clipboard().write_text(decrypted.clone())
+        .map_err(|e| e.to_string())?;
+
+    let app_clone = app.clone();
+
+    tauri::async_runtime::spawn(async move {
+        use std::{thread, time::Duration};
+
+        thread::sleep(Duration::from_secs(10));
+
+        if let Ok(current) = app_clone.clipboard().read_text() {
+            if current == decrypted {
+                let _ = app_clone.clipboard().write_text("");
+            }
+        }
+    });
+
+    Ok(())
+}
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(AppState {
             key: Mutex::new(None),
         })
@@ -197,7 +232,8 @@ pub fn run() {
             setup_vault,
             unlock_vault,
             vault_exists,
-            lock_vault
+            lock_vault,
+            copy_secret_to_clipboard
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

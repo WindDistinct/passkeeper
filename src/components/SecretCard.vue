@@ -11,8 +11,15 @@
       {{ item.username || 'No username' }}
     </p>
 
-    <button @click="reveal" class="text-xs text-zinc-400 mt-2">
-      {{ value ? 'Revealed (auto-hide)' : 'Show secret' }}
+    <button
+      @mousedown="startReveal"
+      @mouseup="stopReveal"
+      @mouseleave="stopReveal"
+      @touchstart.prevent="startReveal"
+      @touchend="stopReveal"
+      class="text-xs text-zinc-400 mt-2"
+    >
+      Hold to reveal
     </button>
 
     <p v-if="value" class="text-green-400 text-sm mt-2">
@@ -20,11 +27,10 @@
     </p>
 
     <button
-      v-if="value"
-      @click="handleCopy"
-      class="text-xs text-blue-400 mt-2"
+      @click="handleSecureCopy"
+      class="text-xs text-emerald-400 mt-2"
     >
-      {{ copied ? 'Copied' : 'Copy' }}
+      Secure Copy
     </button>
 
   </div>
@@ -32,7 +38,7 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted, watch } from 'vue'
-import { decryptSecret } from '../services/secretService'
+import { decryptSecret, copySecretToClipboard } from '../services/secretService'
 import type { SecretItem } from '../types/secret'
 
 import { useClipboard } from '../composables/useClipboard'
@@ -45,11 +51,12 @@ const props = defineProps<{
 
 const value = ref('')
 
-const { copy, copied } = useClipboard()
+const { copy } = useClipboard()
 const toast = useToastStore()
 const { isVisible } = useAppVisibility()
 
-let revealTimer: ReturnType<typeof setTimeout> | null = null
+let isHolding = false
+console.log(isHolding)
 
 watch(isVisible, (visible) => {
   if (!visible) {
@@ -57,40 +64,37 @@ watch(isVisible, (visible) => {
   }
 })
 
-async function reveal() {
+async function startReveal() {
   if (!props.item.encrypted_payload) return
 
-  if (value.value) {
-    if (revealTimer) {
-      clearTimeout(revealTimer)
-    }
-  } else {
+  isHolding = true
+  console.log(isHolding)
+
+  // evitar múltiples decrypts
+  if (!value.value) {
     value.value = await decryptSecret(props.item.encrypted_payload)
   }
-
-  revealTimer = setTimeout(() => {
-    clearSecret()
-  }, 8000)
 }
 
-async function handleCopy() {
-  if (!value.value) return
-
-  await copy(value.value)
-  toast.show('Copied to clipboard (auto-clear in 10s)')
+function stopReveal() {
+  isHolding = false
+  clearSecret()
 }
 
 function clearSecret() {
   value.value = ''
-
-  if (revealTimer) {
-    clearTimeout(revealTimer)
-    revealTimer = null
-  }
 }
 
 onUnmounted(() => {
   clearSecret()
 })
+
+async function handleSecureCopy() {
+  if (!props.item.encrypted_payload) return
+
+  await copySecretToClipboard(props.item.encrypted_payload)
+
+  toast.show('Copied securely (auto-clear in 10s)')
+}
 
 </script>
