@@ -66,7 +66,10 @@ fn create_secret(
     payload: NewSecret,
     state: tauri::State<AppState>
 ) -> Result<(), String> {
-    let key_guard = state.key.lock().unwrap();
+    let key_guard = state
+        .key
+        .lock()
+        .map_err(|_| "Failed to acquire vault lock".to_string())?;
     let key = key_guard.as_ref().ok_or("Vault locked")?;
 
     let conn = db::connect().map_err(|e| e.to_string())?;
@@ -102,7 +105,10 @@ fn get_secret_value(
     secret_id: String,
     state: tauri::State<AppState>
 ) -> Result<String, String> {
-    let key_guard = state.key.lock().unwrap();
+    let key_guard = state
+        .key
+        .lock()
+        .map_err(|_| "Failed to acquire vault lock".to_string())?;
     let key = key_guard.as_ref().ok_or("Vault locked")?;
 
     let conn = db::connect().map_err(|e| e.to_string())?;
@@ -164,14 +170,18 @@ fn unlock_vault(
     let computed_hash = base64::engine::general_purpose::STANDARD.encode(&key);
     
     if computed_hash == stored_hash {
-        let mut guard = state.key.lock().unwrap();
+        let mut guard = state
+            .key
+            .lock()
+            .map_err(|_| "Failed to acquire vault lock".to_string())?;
+    
         *guard = Some(key);
-        return Ok(true);
+    
+        Ok(true)
+    } else {
+        key.zeroize();
+        Ok(false)
     }
-    
-    key.zeroize();
-    
-    Ok(false)
 }
 
 
@@ -192,7 +202,7 @@ fn vault_exists() -> Result<bool, String> {
 
 #[tauri::command]
 fn lock_vault(state: tauri::State<AppState>) -> Result<(), String> {
-    let mut guard = state.key.lock().unwrap();
+    let mut guard = state.key.lock().map_err(|_| "Failed to acquire vault lock".to_string())?;
     if let Some(mut key) = guard.take() {
         key.zeroize();
     }
@@ -205,7 +215,10 @@ fn copy_secret_to_clipboard(
     secret_id: String,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
-    let key_guard = state.key.lock().unwrap();
+    let key_guard = state
+        .key
+        .lock()
+        .map_err(|_| "Failed to acquire vault lock".to_string())?;
     let key = key_guard.as_ref().ok_or("Vault locked")?;
 
     let conn = db::connect().map_err(|e| e.to_string())?;
