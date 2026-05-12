@@ -77,7 +77,8 @@ fn create_secret(
 
     let payload_json = serde_json::to_string(&secret_payload).unwrap();
 
-    let encrypted_payload = encrypt(key, &payload_json);
+    let encrypted_payload =
+        encrypt(key, &payload_json)?;
 
     conn.execute(
         "INSERT INTO secrets (id, title, username, secret_type, encrypted_payload, created_at)
@@ -110,7 +111,7 @@ fn get_secret_value(
         db::get_encrypted_payload_by_id(&conn, &secret_id)
             .map_err(|e| e.to_string())?;
 
-    let decrypted = decrypt(key, &encrypted_payload);
+    let decrypted = decrypt(key, &encrypted_payload)?;
 
     let parsed: serde_json::Value =
         serde_json::from_str(&decrypted)
@@ -131,7 +132,7 @@ fn setup_vault(password: String) -> Result<(), String> {
     let mut salt = [0u8; 16];
     rand::thread_rng().fill_bytes(&mut salt);
 
-    let key = derive_key(&password, &salt);
+    let key = derive_key(&password, &salt)?;
 
     let hash = general_purpose::STANDARD.encode(&key);
 
@@ -159,7 +160,7 @@ fn unlock_vault(
         )
         .map_err(|e| e.to_string())?;
 
-    let mut key = derive_key(&password, &salt);
+    let mut key = derive_key(&password, &salt)?;
     let computed_hash = base64::engine::general_purpose::STANDARD.encode(&key);
     
     if computed_hash == stored_hash {
@@ -213,7 +214,7 @@ fn copy_secret_to_clipboard(
         db::get_encrypted_payload_by_id(&conn, &secret_id)
             .map_err(|e| e.to_string())?;
 
-    let decrypted = decrypt(key, &encrypted_payload);
+    let decrypted = decrypt(key, &encrypted_payload)?;
 
     let parsed: serde_json::Value =
         serde_json::from_str(&decrypted)
