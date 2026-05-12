@@ -27,7 +27,7 @@ struct NewSecret {
     title: String,
     username: Option<String>,
     secret_type: String,
-    password: Option<String>,
+    value: String,
 }
 
 
@@ -57,7 +57,7 @@ fn get_secrets() -> Result<Vec<SecretPreview>, String> {
     for item in rows {
         result.push(item.map_err(|e| e.to_string())?);
     }
-    
+
     Ok(result)
 }
 
@@ -72,7 +72,7 @@ fn create_secret(
     let conn = db::connect().map_err(|e| e.to_string())?;
 
     let secret_payload = serde_json::json!({
-        "password": payload.password
+        "value": payload.value
     });
 
     let payload_json = serde_json::to_string(&secret_payload).unwrap();
@@ -98,15 +98,29 @@ fn create_secret(
 
 #[tauri::command]
 fn get_secret_value(
-    encrypted_payload: String,
+    secret_id: String,
     state: tauri::State<AppState>
 ) -> Result<String, String> {
     let key_guard = state.key.lock().unwrap();
     let key = key_guard.as_ref().ok_or("Vault locked")?;
 
+    let conn = db::connect().map_err(|e| e.to_string())?;
+
+    let encrypted_payload =
+        db::get_encrypted_payload_by_id(&conn, &secret_id)
+            .map_err(|e| e.to_string())?;
+
     let decrypted = decrypt(key, &encrypted_payload);
 
-    Ok(decrypted)
+    let parsed: serde_json::Value =
+        serde_json::from_str(&decrypted)
+            .map_err(|e| e.to_string())?;
+
+    let value = parsed["value"]
+        .as_str()
+        .ok_or("Invalid payload")?;
+
+    Ok(value.to_string())
 }
 
 

@@ -26,12 +26,12 @@
       {{ value }}
     </p>
 
-    <button
+    <!-- <button
       @click="handleSecureCopy"
       class="text-xs text-emerald-400 mt-2"
     >
       Secure Copy
-    </button>
+    </button> -->
 
   </div>
 </template>
@@ -63,13 +63,12 @@ watch(isVisible, (visible) => {
 })
 
 async function startReveal() {
-  if (!props.item.encrypted_payload) return
 
   isHolding = true
 
   // evitar múltiples decrypts
   if (!value.value) {
-    value.value = await decryptSecret(props.item.encrypted_payload)
+    value.value = await decryptSecret(props.item.id)  
   }
 }
 
@@ -86,12 +85,12 @@ onUnmounted(() => {
   clearSecret()
 })
 
-async function handleSecureCopy() {
-  if (!props.item.encrypted_payload) return
+// async function handleSecureCopy() {
+//   if (!props.item.encrypted_payload) return
 
-  await copySecretToClipboard(props.item.encrypted_payload)
+//   await copySecretToClipboard(props.item.encrypted_payload)
 
-  toast.show('Copied securely (auto-clear in 10s)')
-}
+//   toast.show('Copied securely (auto-clear in 10s)')
+// }
 
 </script>

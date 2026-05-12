@@ -11,7 +11,9 @@ pub fn connect() -> Result<Connection> {
             secret_type TEXT NOT NULL,
             favorite INTEGER NOT NULL DEFAULT 0,
             encrypted_payload TEXT,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            deleted_at TEXT
         )",
         [],
     )?;
@@ -26,4 +28,18 @@ pub fn connect() -> Result<Connection> {
     )?;    
 
     Ok(conn)
+}
+
+pub fn get_encrypted_payload_by_id(
+    conn: &Connection,
+    secret_id: &str,
+) -> Result<String> {
+    conn.query_row(
+        "SELECT encrypted_payload
+         FROM secrets
+         WHERE id = ?1
+         AND deleted_at IS NULL",
+        [secret_id],
+        |row| row.get(0),
+    )
 }

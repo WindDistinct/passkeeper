@@ -28,7 +28,7 @@ export const useSecretStore = defineStore('secrets', () => {
     }
 
     async function addSecret(payload: {
-        password: any
+        value: any
         title: string
         username?: string
         type: 'password' | 'api_key' | 'note' | 'ssh_key'
@@ -38,7 +38,7 @@ export const useSecretStore = defineStore('secrets', () => {
             title: payload.title,
             username: payload.username,
             secret_type: payload.type,
-            password: payload.password
+            value: payload.value
         })
 
 

@@ -30,8 +30,8 @@
                 </select>
 
                 <input
-                    v-model="password"
-                    placeholder="Password"
+                    v-model="value"
+                    placeholder="Value"
                     class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2"
                     />
             </div>
@@ -63,7 +63,7 @@
         open: boolean
     }>()
 
-    const password = ref('')
+    const value = ref('')
 
     const emit = defineEmits(['close'])
 
@@ -80,13 +80,13 @@
             title: title.value,
             username: username.value,
             type: type.value,
-            password: password.value
+            value: value.value
         })
 
         title.value = ''
         username.value = ''
         type.value = 'password'
-        password.value = ''
+        value.value = ''
 
         emit('close')
     }
