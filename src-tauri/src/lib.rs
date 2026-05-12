@@ -201,15 +201,31 @@ fn lock_vault(state: tauri::State<AppState>) -> Result<(), String> {
 #[tauri::command]
 fn copy_secret_to_clipboard(
     app: tauri::AppHandle,
-    encrypted_payload: String,
+    secret_id: String,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
     let key_guard = state.key.lock().unwrap();
     let key = key_guard.as_ref().ok_or("Vault locked")?;
 
+    let conn = db::connect().map_err(|e| e.to_string())?;
+
+    let encrypted_payload =
+        db::get_encrypted_payload_by_id(&conn, &secret_id)
+            .map_err(|e| e.to_string())?;
+
     let decrypted = decrypt(key, &encrypted_payload);
 
-    app.clipboard().write_text(decrypted.clone())
+    let parsed: serde_json::Value =
+        serde_json::from_str(&decrypted)
+            .map_err(|e| e.to_string())?;
+
+    let value = parsed["value"]
+        .as_str()
+        .ok_or("Invalid payload")?
+        .to_string();
+
+    app.clipboard()
+        .write_text(value.clone())
         .map_err(|e| e.to_string())?;
 
     let app_clone = app.clone();
@@ -220,7 +236,7 @@ fn copy_secret_to_clipboard(
         thread::sleep(Duration::from_secs(10));
 
         if let Ok(current) = app_clone.clipboard().read_text() {
-            if current == decrypted {
+            if current == value {
                 let _ = app_clone.clipboard().write_text("");
             }
         }

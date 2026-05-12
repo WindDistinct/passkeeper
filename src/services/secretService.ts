@@ -32,8 +32,8 @@ export async function lockVault() {
     return await invoke('lock_vault')
 }
 
-export async function copySecretToClipboard(payload: string): Promise<void> {
+export async function copySecretToClipboard(secretId: string): Promise<void> {
     await invoke('copy_secret_to_clipboard', {
-        encryptedPayload: payload
+        secretId
     })
 }

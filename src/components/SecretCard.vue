@@ -26,12 +26,12 @@
       {{ value }}
     </p>
 
-    <!-- <button
+    <button
       @click="handleSecureCopy"
       class="text-xs text-emerald-400 mt-2"
     >
       Secure Copy
-    </button> -->
+    </button>
 
   </div>
 </template>
@@ -85,12 +85,10 @@ onUnmounted(() => {
   clearSecret()
 })
 
-// async function handleSecureCopy() {
-//   if (!props.item.encrypted_payload) return
+async function handleSecureCopy() {
 
-//   await copySecretToClipboard(props.item.encrypted_payload)
-
-//   toast.show('Copied securely (auto-clear in 10s)')
-// }
+  await copySecretToClipboard(props.item.id)
+  toast.show('Copied securely (auto-clear in 10s)')
+}
 
 </script>
