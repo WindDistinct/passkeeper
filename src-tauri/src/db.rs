@@ -37,8 +37,7 @@ pub fn get_encrypted_payload_by_id(
     conn.query_row(
         "SELECT encrypted_payload
          FROM secrets
-         WHERE id = ?1
-         AND deleted_at IS NULL",
+         WHERE id = ?1",
         [secret_id],
         |row| row.get(0),
     )
