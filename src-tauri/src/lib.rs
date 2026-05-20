@@ -37,7 +37,7 @@ fn get_secrets() -> Result<Vec<SecretPreview>, String> {
     let conn = db::connect().map_err(|e| e.to_string())?;
 
     let mut stmt = conn
-        .prepare("SELECT id, title, username, secret_type, favorite FROM secrets")
+        .prepare("SELECT id, title, username, secret_type, favorite FROM secrets ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -259,6 +259,20 @@ fn copy_secret_to_clipboard(
     Ok(())
 }
 
+#[tauri::command]
+fn delete_secret(secret_id: String) -> Result<(), String> {
+    let conn = db::connect().map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "DELETE FROM secrets
+         WHERE id = ?1",
+        [secret_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -273,7 +287,8 @@ pub fn run() {
             unlock_vault,
             vault_exists,
             lock_vault,
-            copy_secret_to_clipboard
+            copy_secret_to_clipboard,
+            delete_secret
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
