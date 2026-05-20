@@ -37,3 +37,9 @@ export async function copySecretToClipboard(secretId: string): Promise<void> {
         secretId
     })
 }
+
+export async function deleteSecret(secretId: string) {
+    return await invoke('delete_secret', {
+        secretId
+    })
+}
