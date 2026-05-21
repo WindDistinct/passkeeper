@@ -33,6 +33,13 @@
       Secure Copy
     </button>
 
+    <button
+      @click="handleDelete"
+      class="text-xs text-red-400 mt-2"
+    >
+      Delete
+    </button>
+
   </div>
 </template>
 
@@ -41,6 +48,7 @@ import { ref, onUnmounted, watch } from 'vue'
 import { decryptSecret, copySecretToClipboard } from '../services/secretService'
 import type { SecretPreview } from '../types/secret'
 
+import { useSecretStore } from '../stores/secretStore'
 import { useToastStore } from '../stores/toastStore'
 import { useAppVisibility } from '../composables/useAppVisibility'
 
@@ -52,6 +60,8 @@ const value = ref('')
 
 const toast = useToastStore()
 const { isVisible } = useAppVisibility()
+
+const secretStore = useSecretStore()
 
 let isHolding = false
 console.log(isHolding)
@@ -89,6 +99,18 @@ async function handleSecureCopy() {
 
   await copySecretToClipboard(props.item.id)
   toast.show('Copied securely (auto-clear in 10s)')
+}
+
+async function handleDelete() {
+  const confirmed = window.confirm(
+    `Delete "${props.item.title}"?`
+  )
+
+  if (!confirmed) return
+
+  await secretStore.removeSecret(props.item.id)
+
+  toast.show('Secret deleted')
 }
 
 </script>
