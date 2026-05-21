@@ -33,84 +33,101 @@
       Secure Copy
     </button>
 
-    <button
-      @click="handleDelete"
-      class="text-xs text-red-400 mt-2"
-    >
-      Delete
-    </button>
+    <div class="flex gap-3">
+      <button
+        @click="handleEdit"
+        class="text-xs text-blue-400 mt-2"
+      >
+        Edit
+      </button>
+
+      <button
+        @click="handleDelete"
+        class="text-xs text-red-400 mt-2"
+      >
+        Delete
+      </button>
+    </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, watch } from 'vue'
-import { decryptSecret, copySecretToClipboard } from '../services/secretService'
-import type { SecretPreview } from '../types/secret'
+  import { ref, onUnmounted, watch } from 'vue'
+  import { decryptSecret, copySecretToClipboard } from '../services/secretService'
+  import type { SecretPreview } from '../types/secret'
 
-import { useSecretStore } from '../stores/secretStore'
-import { useToastStore } from '../stores/toastStore'
-import { useAppVisibility } from '../composables/useAppVisibility'
+  import { useSecretStore } from '../stores/secretStore'
+  import { useToastStore } from '../stores/toastStore'
+  import { useAppVisibility } from '../composables/useAppVisibility'
 
-const props = defineProps<{
-  item: SecretPreview
-}>()
+  const props = defineProps<{
+    item: SecretPreview
+  }>()
 
-const value = ref('')
+  const value = ref('')
 
-const toast = useToastStore()
-const { isVisible } = useAppVisibility()
+  const toast = useToastStore()
+  const { isVisible } = useAppVisibility()
 
-const secretStore = useSecretStore()
+  const secretStore = useSecretStore()
 
-let isHolding = false
-console.log(isHolding)
+  const emit = defineEmits<{
+    edit: [id: string]
+  }>()
 
-watch(isVisible, (visible) => {
-  if (!visible) {
+  let isHolding = false
+  console.log(isHolding)
+
+  watch(isVisible, (visible) => {
+    if (!visible) {
+      clearSecret()
+    }
+  })
+
+  async function startReveal() {
+
+    isHolding = true
+
+    // evitar múltiples decrypts
+    if (!value.value) {
+      value.value = await decryptSecret(props.item.id)  
+    }
+  }
+
+  function stopReveal() {
+    isHolding = false
     clearSecret()
   }
-})
 
-async function startReveal() {
-
-  isHolding = true
-
-  // evitar múltiples decrypts
-  if (!value.value) {
-    value.value = await decryptSecret(props.item.id)  
+  function clearSecret() {
+    value.value = ''
   }
-}
 
-function stopReveal() {
-  isHolding = false
-  clearSecret()
-}
+  onUnmounted(() => {
+    clearSecret()
+  })
 
-function clearSecret() {
-  value.value = ''
-}
+  async function handleSecureCopy() {
 
-onUnmounted(() => {
-  clearSecret()
-})
+    await copySecretToClipboard(props.item.id)
+    toast.show('Copied securely (auto-clear in 10s)')
+  }
 
-async function handleSecureCopy() {
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `Delete "${props.item.title}"?`
+    )
 
-  await copySecretToClipboard(props.item.id)
-  toast.show('Copied securely (auto-clear in 10s)')
-}
+    if (!confirmed) return
 
-async function handleDelete() {
-  const confirmed = window.confirm(
-    `Delete "${props.item.title}"?`
-  )
+    await secretStore.removeSecret(props.item.id)
 
-  if (!confirmed) return
+    toast.show('Secret deleted')
+  }
 
-  await secretStore.removeSecret(props.item.id)
-
-  toast.show('Secret deleted')
-}
+  function handleEdit() {
+    emit('edit', props.item.id)
+  }
 
 </script>

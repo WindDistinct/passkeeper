@@ -24,7 +24,15 @@ export const useSecretStore = defineStore('secrets', () => {
     }
 
     async function loadSecrets() {
-        secrets.value = await fetchSecrets() as any
+        const data = await fetchSecrets() as any[]
+
+        secrets.value = data.map(secret => ({
+            id: secret.id,
+            title: secret.title,
+            username: secret.username,
+            type: secret.secret_type,
+            favorite: Boolean(secret.favorite)
+        }))
     }
 
     async function addSecret(payload: {

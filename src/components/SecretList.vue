@@ -4,14 +4,19 @@
         v-for="secret in store.filteredSecrets"
         :key="secret.id"
         :item="secret"
+        @edit="emit('edit', $event)"
       />
     </div>
-  </template>
+</template>
   
-  <script setup lang="ts">
+<script setup lang="ts">
   import { useSecretStore } from '../stores/secretStore'
   import SecretCard from './SecretCard.vue'
   
   const store = useSecretStore()
-  </script>
+
+  const emit = defineEmits<{
+    edit: [id:string]
+  }>()
+</script>
   

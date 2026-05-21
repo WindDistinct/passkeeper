@@ -61,6 +61,7 @@
     import { ref, watch } from 'vue'
     import { useSecretStore } from '../stores/secretStore'
     import { SecretPreview } from '../types/secret';
+    import { decryptSecret } from '../services/secretService'
 
     const props = defineProps<{
         open:boolean
@@ -92,12 +93,20 @@
             username.value = secret.username || ''
             type.value = secret.type
 
-            value.value = ''
+            loadSecretValue(secret.id)
         },
         {
             immediate:true
         }
     )
+
+    async function loadSecretValue(secretId:string) {
+        try {
+            value.value = await decryptSecret(secretId)
+        } catch {
+            value.value = ''
+        }
+    }
 
     async function submit() {
         if (!title.value.trim()) return
