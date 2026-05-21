@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SecretPreview } from '../types/secret'
-import { fetchSecrets, createSecret, updateSecret, deleteSecret } from '../services/secretService'
+import { fetchSecrets, createSecret, updateSecret, deleteSecret, toggleFavorite } from '../services/secretService'
 
 export const useSecretStore = defineStore('secrets', () => {
     const currentFilter = ref('all')
@@ -80,6 +80,23 @@ export const useSecretStore = defineStore('secrets', () => {
         await loadSecrets()
     }
 
+    async function favoriteSecret(
+        secretId: string
+    ) {
+
+        const favorite =
+            await toggleFavorite(secretId)
+
+        const secret =
+            secrets.value.find(
+                s => s.id === secretId
+            )
+
+        if (!secret) return
+
+        secret.favorite = favorite
+    }
+
     return {
         secrets,
         filteredSecrets,
@@ -88,6 +105,7 @@ export const useSecretStore = defineStore('secrets', () => {
         addSecret,
         removeSecret,
         editSecret,
-        loadSecrets
+        loadSecrets,
+        favoriteSecret
     }
 })

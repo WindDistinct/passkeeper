@@ -332,6 +332,48 @@ fn update_secret(
     Ok(())
 }
 
+#[tauri::command]
+fn toggle_favorite(
+    secret_id: String
+) -> Result<bool, String> {
+
+    let conn = db::connect()
+        .map_err(|e| e.to_string())?;
+
+    let current: i32 = conn
+        .query_row(
+            "
+            SELECT favorite
+            FROM secrets
+            WHERE id=?1
+            ",
+            [secret_id.clone()],
+            |row| row.get(0)
+        )
+        .map_err(|e| e.to_string())?;
+
+    let next = if current == 1 {
+        0
+    } else {
+        1
+    };
+
+    conn.execute(
+        "
+        UPDATE secrets
+        SET favorite=?1
+        WHERE id=?2
+        ",
+        rusqlite::params![
+            next,
+            secret_id
+        ]
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(next == 1)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -348,7 +390,8 @@ pub fn run() {
             lock_vault,
             copy_secret_to_clipboard,
             update_secret,
-            delete_secret
+            delete_secret,
+            toggle_favorite
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

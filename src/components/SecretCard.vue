@@ -1,10 +1,28 @@
 <template>
   <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
     <div class="flex items-center justify-between">
-      <h3 class="font-medium">{{ item.title }}</h3>
-      <span class="text-xs text-zinc-400 uppercase">
+
+      <div class="flex items-center gap-2">
+
+        <button
+          @click="handleFavorite"
+          class="text-yellow-400"
+        >
+          {{ item.favorite ? '★' : '☆' }}
+        </button>
+
+        <h3 class="font-medium">
+          {{ item.title }}
+        </h3>
+
+      </div>
+
+      <span
+        class="text-xs text-zinc-400 uppercase"
+      >
         {{ item.type }}
       </span>
+
     </div>
 
     <p class="text-sm text-zinc-500 mt-2">
@@ -129,5 +147,11 @@
   function handleEdit() {
     emit('edit', props.item.id)
   }
+
+  async function handleFavorite() {
+    await secretStore.favoriteSecret(
+        props.item.id
+    )
+}
 
 </script>

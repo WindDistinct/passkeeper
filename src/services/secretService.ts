@@ -52,3 +52,15 @@ export async function updateSecret(data: any) {
         }
     )
 }
+
+export async function toggleFavorite(
+    secretId: string
+): Promise<boolean> {
+
+    return await invoke(
+        'toggle_favorite',
+        {
+            secretId
+        }
+    )
+}
