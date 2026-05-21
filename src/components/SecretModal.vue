@@ -4,7 +4,9 @@
         class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
     >
         <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 text-white rounded-2xl p-6">
-            <h2 class="text-xl font-semibold mb-4">New Secret</h2>
+            <h2 class="text-xl font-semibold mb-4">
+                {{ props.secret ? 'Edit Secret' : 'New Secret' }}
+            </h2>
 
             <div class="space-y-4">
                 <input
@@ -56,11 +58,13 @@
 </template>
   
 <script setup lang="ts">
-    import { ref } from 'vue'
+    import { ref, watch } from 'vue'
     import { useSecretStore } from '../stores/secretStore'
+    import { SecretPreview } from '../types/secret';
 
-    defineProps<{
-        open: boolean
+    const props = defineProps<{
+        open:boolean
+        secret?: SecretPreview
     }>()
 
     const value = ref('')
@@ -73,22 +77,44 @@
     const username = ref('')
     const type = ref<'password' | 'api_key' | 'note' | 'ssh_key'>('password')
 
-    function submit() {
+    watch(
+        () => props.secret,
+        (secret) => {
+            if (!secret) {
+                title.value = ''
+                username.value = ''
+                type.value = 'password'
+                value.value = ''
+                return
+            }
+
+            title.value = secret.title
+            username.value = secret.username || ''
+            type.value = secret.type
+
+            value.value = ''
+        },
+        {
+            immediate:true
+        }
+    )
+
+    async function submit() {
         if (!title.value.trim()) return
 
-        store.addSecret({
-            title: title.value,
-            username: username.value,
-            type: type.value,
-            value: value.value
-        })
-
-        title.value = ''
-        username.value = ''
-        type.value = 'password'
-        value.value = ''
+        if (props.secret) {
+            console.log('edit mode')
+        } else {
+            await store.addSecret({
+                title:title.value,
+                username:username.value,
+                type:type.value,
+                value:value.value
+            })
+        }
 
         emit('close')
     }
+    
 </script>
   
