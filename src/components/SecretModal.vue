@@ -40,7 +40,10 @@
 
             <div class="flex justify-end gap-3 mt-6">
                 <button
-                    @click="$emit('close')"
+                    @click="
+                        resetForm();
+                        $emit('close')
+                    "
                     class="px-4 py-2 rounded-lg bg-zinc-800"
                     >
                     Cancel
@@ -82,10 +85,7 @@
         () => props.secret,
         (secret) => {
             if (!secret) {
-                title.value = ''
-                username.value = ''
-                type.value = 'password'
-                value.value = ''
+                resetForm()
                 return
             }
 
@@ -112,17 +112,36 @@
         if (!title.value.trim()) return
 
         if (props.secret) {
-            console.log('edit mode')
-        } else {
-            await store.addSecret({
-                title:title.value,
-                username:username.value,
-                type:type.value,
-                value:value.value
+
+            await store.editSecret({
+                id: props.secret.id,
+                title: title.value,
+                username: username.value,
+                type: type.value,
+                value: value.value
             })
+
+        } else {
+
+            await store.addSecret({
+                title: title.value,
+                username: username.value,
+                type: type.value,
+                value: value.value
+            })
+
         }
 
+        resetForm()
+
         emit('close')
+    }
+
+    function resetForm() {
+        title.value = ''
+        username.value = ''
+        type.value = 'password'
+        value.value = ''
     }
     
 </script>

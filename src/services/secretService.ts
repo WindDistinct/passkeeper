@@ -43,3 +43,12 @@ export async function deleteSecret(secretId: string) {
         secretId
     })
 }
+
+export async function updateSecret(data: any) {
+    return await invoke(
+        'update_secret',
+        {
+            payload: data
+        }
+    )
+}

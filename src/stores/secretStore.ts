@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SecretPreview } from '../types/secret'
-import { fetchSecrets, createSecret, deleteSecret } from '../services/secretService'
+import { fetchSecrets, createSecret, updateSecret, deleteSecret } from '../services/secretService'
 
 export const useSecretStore = defineStore('secrets', () => {
     const currentFilter = ref('all')
@@ -61,6 +61,25 @@ export const useSecretStore = defineStore('secrets', () => {
         )
     }
 
+    async function editSecret(payload: {
+        id: string
+        title: string
+        username?: string
+        type: 'password' | 'api_key' | 'note' | 'ssh_key'
+        value: string
+    }) {
+
+        await updateSecret({
+            id: payload.id,
+            title: payload.title,
+            username: payload.username,
+            secret_type: payload.type,
+            value: payload.value
+        })
+
+        await loadSecrets()
+    }
+
     return {
         secrets,
         filteredSecrets,
@@ -68,6 +87,7 @@ export const useSecretStore = defineStore('secrets', () => {
         setFilter,
         addSecret,
         removeSecret,
+        editSecret,
         loadSecrets
     }
 })

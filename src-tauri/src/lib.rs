@@ -30,7 +30,14 @@ struct NewSecret {
     value: String,
 }
 
-
+#[derive(Serialize, Deserialize)]
+struct UpdateSecret {
+    id: String,
+    title: String,
+    username: Option<String>,
+    secret_type: String,
+    value: String,
+}
 
 #[tauri::command]
 fn get_secrets() -> Result<Vec<SecretPreview>, String> {
@@ -273,6 +280,58 @@ fn delete_secret(secret_id: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn update_secret(
+    payload: UpdateSecret,
+    state: tauri::State<AppState>
+) -> Result<(), String> {
+
+    let key_guard = state
+        .key
+        .lock()
+        .map_err(|_| "Failed to acquire vault lock".to_string())?;
+
+    let key = key_guard
+        .as_ref()
+        .ok_or("Vault locked")?;
+
+    let conn = db::connect()
+        .map_err(|e| e.to_string())?;
+
+    let secret_payload = serde_json::json!({
+        "value": payload.value
+    });
+
+    let payload_json =
+        serde_json::to_string(&secret_payload)
+        .map_err(|e| e.to_string())?;
+
+    let encrypted_payload =
+        encrypt(key, &payload_json)?;
+
+    conn.execute(
+        "
+        UPDATE secrets
+        SET
+            title=?1,
+            username=?2,
+            secret_type=?3,
+            encrypted_payload=?4
+        WHERE id=?5
+        ",
+        rusqlite::params![
+            payload.title,
+            payload.username,
+            payload.secret_type,
+            encrypted_payload,
+            payload.id
+        ]
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -288,6 +347,7 @@ pub fn run() {
             vault_exists,
             lock_vault,
             copy_secret_to_clipboard,
+            update_secret,
             delete_secret
         ])
         .run(tauri::generate_context!())

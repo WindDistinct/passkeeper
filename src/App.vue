@@ -9,12 +9,7 @@
   <UnlockPage v-else-if="!vault.unlocked" />
 
   <template v-else> 
-    <MainLayout
-        @new-secret="
-            editingSecret = undefined;
-            open = true
-        "
-    >
+    <MainLayout @new-secret="openNewSecret">
       <div class="border border-dashed border-zinc-800 rounded-2xl h-full min-h-125 p-6">
         <h2 class="text-2xl font-semibold mb-4">Your Secrets</h2>
         <!-- <p class="text-zinc-400">Your secrets will appear here.</p> -->
@@ -25,9 +20,9 @@
     </MainLayout>
 
     <SecretModal
-        :open="open"
-        :secret="editingSecret"
-        @close="open=false"
+      :open="open"
+      :secret="editingSecret"
+      @close="closeModal"
     />
   </template>
 
@@ -101,6 +96,16 @@
     if (!secret) return
 
     editingSecret.value = secret
+    open.value = true
+  }
+
+  function closeModal() {
+    open.value = false
+    editingSecret.value = undefined
+  }
+
+  function openNewSecret() {
+    editingSecret.value = undefined
     open.value = true
   }
 </script>
